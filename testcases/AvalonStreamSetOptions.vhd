@@ -1,5 +1,5 @@
- 
-architecture AvalonStreamSetOptions of AvalonST_TestCtrl is
+
+architecture AvalonStreamSetOptions of TestCtrl is
 
   signal TestDone : integer_barrier := 1;
   constant MAX_LEN : integer := maximum(CHANNEL_LEN, EMPTY_LEN);
@@ -20,7 +20,7 @@ begin
     SetLogEnable(INFO, TRUE); -- Enable INFO logs
     SetLogEnable(DEBUG, TRUE); -- Enable INFO logs
 
-    -- Wait for testbench initialization 
+    -- Wait for testbench initialization
     wait for 0 ns;
     wait for 0 ns;
     -- Wait for Design Reset
@@ -122,10 +122,10 @@ begin
 
 end AvalonStreamSetOptions;
 
-configuration AvalonStreamSetOptions of AvalonStreamTestHarness is
-  for bhv
-    for TestCtrl_1 : AvalonST_TestCtrl
-      use entity osvvm_avalonst.AvalonST_TestCtrl(AvalonStreamSetOptions);
+configuration AvalonStreamSetOptions of TestHarness is
+  for structural
+    for TestCtrl_1 : TestCtrl
+      use entity work.TestCtrl(AvalonStreamSetOptions);
     end for;
   end for;
 end AvalonStreamSetOptions;

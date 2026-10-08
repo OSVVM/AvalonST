@@ -1,5 +1,5 @@
 
-architecture AvalonStreamSendGet of AvalonST_TestCtrl is
+architecture AvalonStreamSendGet of TestCtrl is
   signal scoreboard : ScoreboardIDType;
   signal TestDone : integer_barrier := 1;
 begin
@@ -16,7 +16,7 @@ begin
     SetLogEnable(INFO, TRUE); -- Enable INFO logs
     -- Scoreboard initialization
     scoreboard <= NewID("AvalonST_SB");
-    -- Wait for simulation elaboration/initialization 
+    -- Wait for simulation elaboration/initialization
     wait for 0 ns;
     wait for 0 ns;
 
@@ -40,7 +40,7 @@ begin
   begin
     wait until Reset = '1';
 
-    --   -- Send and Get    
+    --   -- Send and Get
     log("Transmit 5 words");
     CheckDataWord := x"0000_0000";
     for I in 1 to 5 loop
@@ -49,7 +49,7 @@ begin
     WaitForTransaction(StreamTxRec);
     WaitForClock(StreamTxRec, 2);
 
-    -- -- Send and Check    
+    -- -- Send and Check
     log("Transmit 5 words");
     CheckDataWord := x"0000_1000";
     for I in 1 to 5 loop
@@ -57,7 +57,7 @@ begin
     end loop;
     WaitForClock(StreamTxRec, 2);
 
-    -- -- SendBurst and GetBurst    
+    -- -- SendBurst and GetBurst
     log("Send 5 word burst");
     CheckDataWord := x"0000_2000";
     for I in 1 to 5 loop
@@ -66,7 +66,7 @@ begin
     SendBurst(StreamTxRec, 5);
 
     WaitForClock(StreamTxRec, 2);
-    -- -- SendBurst and CheckBurst    
+    -- -- SendBurst and CheckBurst
     log("Send 5 word burst");
     CheckDataWord := x"0000_3000";
     for I in 1 to 5 loop
@@ -74,18 +74,18 @@ begin
     end loop;
     SendBurst(StreamTxRec, 5);
 
-    -- SendBurst and CheckBurst    
+    -- SendBurst and CheckBurst
     WaitForClock(StreamTxRec, 2);
     log("SendBurstVector 5 word burst");
     SendBurstVector(StreamTxRec,
     (X"0000_4001", X"0000_4003", X"0000_4005", X"0000_4007", X"0000_4009"));
 
-    --          SendBurstIncrement and CheckBurstIncrement    
+    --          SendBurstIncrement and CheckBurstIncrement
     WaitForClock(StreamTxRec, 2);
     log("SendBurstIncrement 5 word burst");
     SendBurstIncrement(StreamTxRec, X"0000_5000", 5);
 
-    -- SendBurstRandom and CheckBurstRandom    
+    -- SendBurstRandom and CheckBurstRandom
     WaitForClock(StreamTxRec, 1);
     log("SendBurstRandom 5 word burst");
     SendBurstRandom (StreamTxRec, X"0000_6000", 5);
@@ -149,10 +149,10 @@ begin
 
 end architecture AvalonStreamSendGet;
 
-configuration AvalonStreamSendGet of AvalonStreamTestHarness is
-  for bhv
-    for TestCtrl_1 : AvalonST_TestCtrl
-      use entity osvvm_avalonst.AvalonST_TestCtrl(AvalonStreamSendGet);
+configuration AvalonStreamSendGet of TestHarness is
+  for structural
+    for TestCtrl_1 : TestCtrl
+      use entity work.TestCtrl(AvalonStreamSendGet);
     end for;
   end for;
 end AvalonStreamSendGet;

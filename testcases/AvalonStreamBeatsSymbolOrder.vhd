@@ -1,7 +1,7 @@
 library osvvm_avalonst;
 context osvvm_avalonst.AvalonStreamContext;
 
-architecture BeatsSymbolOrder of AvalonST_TestCtrl is
+architecture BeatsSymbolOrder of TestCtrl is
   signal TestDone : integer_barrier := 1;
   signal C_NUM_WORDS : integer := 2;
   constant cAvalonStreamDataWidth : integer := 32;
@@ -39,7 +39,7 @@ begin
     variable CheckDataWord : std_logic_vector(31 downto 0);
   begin
     wait until Reset = '1';
-    -- SendBurst and GetBurst    
+    -- SendBurst and GetBurst
     log("Send 4 word burst");
 
     SetBurstMode(StreamTxRec, STREAM_BURST_BYTE_MODE);
@@ -88,10 +88,10 @@ begin
 
 end architecture BeatsSymbolOrder;
 
-configuration AvalonStreamBeatsSymbolOrder of AvalonStreamTestHarness is
-  for bhv
-    for TestCtrl_1 : AvalonST_TestCtrl
-      use entity osvvm_avalonst.AvalonST_TestCtrl(BeatsSymbolOrder);
+configuration AvalonStreamBeatsSymbolOrder of TestHarness is
+  for structural
+    for TestCtrl_1 : TestCtrl
+      use entity work.TestCtrl(BeatsSymbolOrder);
     end for;
   end for;
 end AvalonStreamBeatsSymbolOrder;
