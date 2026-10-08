@@ -1,6 +1,7 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.math_real.all;
 library osvvm;
 context osvvm.OsvvmContext;
 use osvvm.ScoreboardPkg_slv.all;
@@ -9,34 +10,75 @@ library osvvm_common;
 context osvvm_common.OsvvmCommonContext; -- for MIT StreamRecType
 
 package AvalonStreamComponentPkg is
+  function log2(x : positive) return natural;
+
+
   component AvalonStreamTransmitter is
     generic (
-      MODEL_ID_NAME : string := "";
-      AVALON_STREAM_DATA_WIDTH : integer := 8;
-      DEFAULT_DELAY : time := 1 ns;
-      tpd_Clk_Data : time := DEFAULT_DELAY;
-      tpd_Clk_Valid : time := DEFAULT_DELAY;
-      tpd_Clk_StartOfPacket : time := DEFAULT_DELAY;
-      tpd_Clk_EndOfPacket : time := DEFAULT_DELAY;
-      tpd_Clk_Empty : time := DEFAULT_DELAY
+      INIT_CHANNEL                  : std_logic_vector := "";
+      INIT_EMPTY                    : std_logic_vector := "";
+
+      MODEL_ID_NAME                 : string := "";
+      AVALON_STREAM_DATA_WIDTH      : integer range 1 to 8192 := 32;
+      AVALON_STREAM_SYMBOL_WIDTH    : integer range 1 to AVALON_STREAM_DATA_WIDTH := 8;
+      AVALON_STREAM_CHANNELS        : integer range 1 to 256 := 1;
+      DEFAULT_DELAY                 : time := 1 ns;
+      tpd_Clk_Data                  : time := DEFAULT_DELAY;
+      tpd_Clk_Valid                 : time := DEFAULT_DELAY;
+      tpd_Clk_StartOfPacket         : time := DEFAULT_DELAY;
+      tpd_Clk_EndOfPacket           : time := DEFAULT_DELAY;
+      tpd_Clk_Empty                 : time := DEFAULT_DELAY;
+      --DEFAULT_CHANNELS            : integer := 1
+      tperiod_Clk                   : time := 10 ns --todo: could be deleted
     );
     port (
-      Clk : in std_logic;
-      Reset : in std_logic;
+      Clk            : in std_logic;
+      Reset          : in std_logic;
       -- DUT signals
-      Valid : out std_logic := '0';
-      Data : out std_logic_vector(AVALON_STREAM_DATA_WIDTH - 1 downto 0);
-      StartOfPacket : out std_logic := '0';
-      EndOfPacket : out std_logic := '0';
-      Empty : out std_logic := '0';
-      --Empty : std_logic_vector(AVALON_STREAM_DATA_WIDTH - )
-      Ready : in std_logic;
+      Valid          : out std_logic := '0';
+      Data           : out std_logic_vector(AVALON_STREAM_DATA_WIDTH - 1 downto 0);
+      StartOfPacket  : out std_logic := '0';
+      EndOfPacket    : out std_logic := '0';
+      Empty          : out std_logic_vector(integer(ceil(log2(real(AVALON_STREAM_DATA_WIDTH) / real(AVALON_STREAM_SYMBOL_WIDTH)))) - 1 downto 0) := (others => '0');
+      Ready          : in std_logic;
+      Channel        : out std_logic_vector(7 downto 0) := (others => '0');
 
-      -- testbench record
-      TransRec : inout StreamRecType);
+      -- OSVVM Transaction record
+      TransRec       : inout StreamRecType
+    );
   end component AvalonStreamTransmitter;
 
-  function log2(x : positive) return natural;
+  component AvalonStreamReceiver is
+    generic (
+      INIT_CHANNEL                  : std_logic_vector := "";
+      INIT_EMPTY                    : std_logic_vector := "";
+      INIT_LAST                     : natural := 0;
+      MODEL_ID_NAME                 : string := "";
+      AVALON_STREAM_DATA_WIDTH      : integer range 1 to 8192 := 32;
+      AVALON_STREAM_SYMBOL_WIDTH    : integer range 1 to AVALON_STREAM_DATA_WIDTH := 8;
+      AVALON_STREAM_ERROR           : integer range 1 to 256 := 1;
+      tperiod_Clk                   : time := 10 ns;
+      DEFAULT_DELAY                 : time := 1 ns;
+      tpd_Clk_Ready                 : time := DEFAULT_DELAY
+    );
+    port (
+      Clk            : in std_logic;
+      Reset          : in std_logic;
+      -- DUT signals
+      Valid          : in std_logic := '0';
+      Data           : in std_logic_vector(AVALON_STREAM_DATA_WIDTH - 1 downto 0);
+      Ready          : out std_logic;
+
+      StartOfPacket  : in std_logic := '0';
+      EndOfPacket    : in std_logic := '0';
+      Empty          : in std_logic_vector(integer(ceil(log2(real(AVALON_STREAM_DATA_WIDTH) / real(AVALON_STREAM_SYMBOL_WIDTH)))) - 1 downto 0);
+      Channel        : in std_logic_vector(7 downto 0) := (others => '0');
+      -- testbench record
+      TransRec       : inout StreamRecType
+    );
+  end component AvalonStreamReceiver;
+
+
 
   ------------------------------------------------------------
   procedure DoAvalonStreamValidHandshake (
