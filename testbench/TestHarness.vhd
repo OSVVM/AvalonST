@@ -6,9 +6,10 @@ use ieee.numeric_std_unsigned.all;
 library osvvm_avalonst;
 context osvvm_avalonst.AvalonStreamContext;
 
-entity AvalonStreamTestHarness is
-end entity AvalonStreamTestHarness;
-architecture bhv of AvalonStreamTestHarness is
+entity TestHarness is
+end entity TestHarness;
+architecture structural of TestHarness is
+
   function log2(x : positive) return natural is
     variable result : natural := 0;
     variable value : positive := x;
@@ -19,17 +20,19 @@ architecture bhv of AvalonStreamTestHarness is
     end loop;
     return result;
   end function;
+
   constant tperiod_Clk : time := 10 ns;
   constant tpd : time := 2 ns;
-  constant AvalonStreamDataWidth : integer := 32;
+  constant AvalonStreamDataWidth   : integer := 32;
   constant AvalonStreamSymbolWidth : integer := 8;
 
   constant TCHANNEL_MAX_WIDTH : integer := 8; -- maximum number of AvalonStream channels
-  constant TEMPTY_MAX_WIDTH : integer := log2(AvalonStreamDataWidth/AvalonStreamSymbolWidth);
+  constant TEMPTY_MAX_WIDTH   : integer := log2(AvalonStreamDataWidth/AvalonStreamSymbolWidth);
 
   constant INIT_CHANNEL : std_logic_vector(TCHANNEL_MAX_WIDTH - 1 downto 0) := (others => '0');
-  constant INIT_EMPTY : std_logic_vector(TEMPTY_MAX_WIDTH - 1 downto 0) := (others => '0');
+  constant INIT_EMPTY   : std_logic_vector(TEMPTY_MAX_WIDTH - 1 downto 0) := (others => '0');
   constant AXI_PARAM_WIDTH : integer := TCHANNEL_MAX_WIDTH + TEMPTY_MAX_WIDTH;
+
   signal Clk : std_logic := '1';
   signal Reset : std_logic := '0';
 
@@ -38,15 +41,15 @@ architecture bhv of AvalonStreamTestHarness is
   signal Valid : std_logic;
   signal StartOfPacket : std_logic;
   signal EndOfPacket : std_logic;
-  signal Empty : std_logic_vector(TEMPTY_MAX_WIDTH - 1 downto 0) := (others => '0');
+  signal Empty   : std_logic_vector(TEMPTY_MAX_WIDTH - 1 downto 0) := (others => '0');
   signal Channel : std_logic_vector(TCHANNEL_MAX_WIDTH - 1 downto 0) := (others => '0');
   signal StreamRxRec, StreamTxRec : StreamRecType(
-  DataToModel (AvalonStreamDataWidth - 1 downto 0),
-  DataFromModel (AvalonStreamDataWidth - 1 downto 0),
-  ParamToModel (AXI_PARAM_WIDTH - 1 downto 0),
-  ParamFromModel(AXI_PARAM_WIDTH - 1 downto 0)
+      DataToModel   (AvalonStreamDataWidth - 1 downto 0),
+      DataFromModel (AvalonStreamDataWidth - 1 downto 0),
+      ParamToModel  (AXI_PARAM_WIDTH - 1 downto 0),
+      ParamFromModel(AXI_PARAM_WIDTH - 1 downto 0)
   );
-  component AvalonST_TestCtrl is
+  component TestCtrl is
     generic (
       CHANNEL_LEN : integer;
       EMPTY_LEN : integer
@@ -60,27 +63,26 @@ architecture bhv of AvalonStreamTestHarness is
       StreamTxRec : inout StreamRecType;
       StreamRxRec : inout StreamRecType
     );
-  end component AvalonST_TestCtrl;
+  end component TestCtrl;
 begin
 
-  -- create Clock 
-  Osvvm.ClockResetPkg.CreateClock (
-  Clk => Clk,
-  Period => Tperiod_Clk
+  -- create Clock
+  CreateClock (
+    Clk     => Clk,
+    Period  => Tperiod_Clk
   );
 
-  -- create nReset 
-  Osvvm.ClockResetPkg.CreateReset (
-  Reset => Reset,
-  ResetActive => '0',
-  Clk => Clk,
-  Period => 2 * tperiod_Clk,
-  tpd => tpd
+  -- create nReset
+  CreateReset (
+    Reset       => Reset,
+    ResetActive => '0',
+    Clk         => Clk,
+    Period      => 2 * tperiod_Clk,
+    tpd         => tpd
   );
 
-  AvalonStreamTransmitter_VC : entity osvvm_avalonst.AvalonStreamTransmitter(bhv)
+  AvalonStreamTransmitter_1 : AvalonStreamTransmitter
     generic map(
-      MODEL_ID_NAME => "AvalonStreamTransmitter",
       INIT_CHANNEL => INIT_CHANNEL,
       INIT_EMPTY => INIT_EMPTY,
       AVALON_STREAM_DATA_WIDTH => AvalonStreamDataWidth,
@@ -102,9 +104,8 @@ begin
       TransRec => StreamTxRec
     );
 
-  AvalonSreamReceiver_VC : entity osvvm_avalonst.AvalonStreamReceiver(bhv)
+  AvalonSreamReceiver_1 : AvalonStreamReceiver
     generic map(
-      MODEL_ID_NAME => "AvalonSreamReceiver",
       AVALON_STREAM_DATA_WIDTH => AvalonStreamDataWidth,
       AVALON_STREAM_SYMBOL_WIDTH => AvalonStreamSymbolWidth,
       DEFAULT_DELAY => 1 ns,
@@ -123,18 +124,18 @@ begin
       TransRec => StreamRxRec
     );
 
-  TestCtrl_1 : entity osvvm_avalonst.AvalonST_TestCtrl
+  TestCtrl_1 : TestCtrl
     generic map(
       CHANNEL_LEN => Channel'length,
-      EMPTY_LEN => Empty'length
+      EMPTY_LEN   => Empty'length
     )
     port map(
       -- Globals
-      Reset => Reset,
-      Clk => Clk,
+      Reset       => Reset,
+      Clk         => Clk,
 
       -- Transaction Record
       StreamTxRec => StreamTxRec,
       StreamRxRec => StreamRxRec
     );
-end architecture bhv;
+end architecture structural ;
