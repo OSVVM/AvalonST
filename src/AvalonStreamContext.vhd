@@ -1,29 +1,14 @@
 --
---  File Name:         UartContext.vhd
---  Design Unit Name:  UartContext
---  OSVVM Release:     OSVVM MODELS STANDARD VERSION
---
---  Maintainer:        Jim Lewis      email:  jim@synthworks.com
+--  File Name:         AvalonStreamContext.vhd
+--  Developer:         Tobias K
 --
 --  Description
---      Context Declaration for UART packages
---
---  Developed by/for:
---        SynthWorks Design Inc.
---        VHDL Training Classes
---        11898 SW 128th Ave.  Tigard, Or  97223
---        http://www.SynthWorks.com
---
---  Revision History:      
---    Date      Version    Description
---    01/2019   2019.01    Initial Revision
---    05/2019   2019.05    Updated for OSVVM public release
---    01/2020   2020.01    Updated license notice
---
+--      Context Declaration for AvalonStream
 --
 --  This file is part of OSVVM.
 --
---  Copyright (c) 2019 - 2020 by SynthWorks Design Inc.
+--  Copyright (c) 2025-2026 by [OSVVM Authors](../AUTHORS.md)
+--
 --
 --  Licensed under the Apache License, Version 2.0 (the "License");
 --  you may not use this file except in compliance with the License.

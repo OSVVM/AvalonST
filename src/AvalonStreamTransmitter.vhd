@@ -12,36 +12,36 @@ library osvvm_avalonst;
 context osvvm_avalonst.AvalonStreamContext;
 entity AvalonStreamTransmitter is
   generic (
-    INIT_CHANNEL : std_logic_vector := "";
-    INIT_EMPTY : std_logic_vector := "";
+    INIT_CHANNEL                  : std_logic_vector := "";
+    INIT_EMPTY                    : std_logic_vector := "";
 
-    MODEL_ID_NAME : string := "";
-    AVALON_STREAM_DATA_WIDTH : integer range 1 to 8192 := 32;
-    AVALON_STREAM_SYMBOL_WIDTH : integer range 1 to AVALON_STREAM_DATA_WIDTH := 8;
-    AVALON_STREAM_CHANNELS : integer range 1 to 256 := 1;
-    DEFAULT_DELAY : time := 1 ns;
-    tpd_Clk_Data : time := DEFAULT_DELAY;
-    tpd_Clk_Valid : time := DEFAULT_DELAY;
-    tpd_Clk_StartOfPacket : time := DEFAULT_DELAY;
-    tpd_Clk_EndOfPacket : time := DEFAULT_DELAY;
-    tpd_Clk_Empty : time := DEFAULT_DELAY;
-    --DEFAULT_CHANNELS   : integer := 1
-    tperiod_Clk : time := 10 ns --todo: could be deleted
+    MODEL_ID_NAME                 : string := "";
+    AVALON_STREAM_DATA_WIDTH      : integer range 1 to 8192 := 32;
+    AVALON_STREAM_SYMBOL_WIDTH    : integer range 1 to AVALON_STREAM_DATA_WIDTH := 8;
+    AVALON_STREAM_CHANNELS        : integer range 1 to 256 := 1;
+    DEFAULT_DELAY                 : time := 1 ns;
+    tpd_Clk_Data                  : time := DEFAULT_DELAY;
+    tpd_Clk_Valid                 : time := DEFAULT_DELAY;
+    tpd_Clk_StartOfPacket         : time := DEFAULT_DELAY;
+    tpd_Clk_EndOfPacket           : time := DEFAULT_DELAY;
+    tpd_Clk_Empty                 : time := DEFAULT_DELAY;
+    --DEFAULT_CHANNELS            : integer := 1
+    tperiod_Clk                   : time := 10 ns --todo: could be deleted
   );
   port (
-    Clk : in std_logic;
-    Reset : in std_logic;
+    Clk            : in std_logic;
+    Reset          : in std_logic;
     -- DUT signals
-    Valid : out std_logic := '0';
-    Data : out std_logic_vector(AVALON_STREAM_DATA_WIDTH - 1 downto 0);
-    StartOfPacket : out std_logic := '0';
-    EndOfPacket : out std_logic := '0';
-    Empty : out std_logic_vector(integer(ceil(log2(real(AVALON_STREAM_DATA_WIDTH) / real(AVALON_STREAM_SYMBOL_WIDTH)))) - 1 downto 0) := (others => '0');
-    Ready : in std_logic;
-    Channel : out std_logic_vector(7 downto 0) := (others => '0');
+    Valid          : out std_logic := '0';
+    Data           : out std_logic_vector(AVALON_STREAM_DATA_WIDTH - 1 downto 0);
+    StartOfPacket  : out std_logic := '0';
+    EndOfPacket    : out std_logic := '0';
+    Empty          : out std_logic_vector(integer(ceil(log2(real(AVALON_STREAM_DATA_WIDTH) / real(AVALON_STREAM_SYMBOL_WIDTH)))) - 1 downto 0) := (others => '0');
+    Ready          : in std_logic;
+    Channel        : out std_logic_vector(7 downto 0) := (others => '0');
 
-    -- testbench record
-    TransRec : inout StreamRecType
+    -- OSVVM Transaction record
+    TransRec       : inout StreamRecType
   );
   -- Use MODEL_ID_NAME Generic if set, otherwise,
   -- use model instance label (preferred if set as entityname_1)
@@ -50,7 +50,7 @@ entity AvalonStreamTransmitter is
                                           to_lower(PathTail(AvalonStreamTransmitter'PATH_NAME)));
 
   alias PacketFifo : ScoreboardIdType is TransRec.BurstFifo;
-end AvalonStreamTransmitter;
+end entity AvalonStreamTransmitter;
 
 architecture bhv of AvalonStreamTransmitter is
   signal ModelID, BusFailedID : AlertLogIDType;
