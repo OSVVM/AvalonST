@@ -1,8 +1,8 @@
 library osvvm_avalonst
 
-analyze ../src/AvalonStreamTbPkg.vhd
-analyze ../src/AvalonStreamOptionsPkg.vhd
-analyze ../src/AvalonStreamComponentPkg.vhd
-analyze ../src/AvalonStreamContext.vhd
-analyze ../src/AvalonStreamTransmitter.vhd
-analyze ../src/AvalonStreamReceiver.vhd
+analyze  AvalonStreamTbPkg.vhd
+analyze  AvalonStreamOptionsPkg.vhd
+analyze  AvalonStreamComponentPkg.vhd
+analyze  AvalonStreamContext.vhd
+analyze  AvalonStreamTransmitter.vhd
+analyze  AvalonStreamReceiver.vhd
