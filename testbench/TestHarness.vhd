@@ -85,8 +85,6 @@ begin
     generic map(
       INIT_CHANNEL => INIT_CHANNEL,
       INIT_EMPTY => INIT_EMPTY,
-      AVALON_STREAM_DATA_WIDTH => AvalonStreamDataWidth,
-      AVALON_STREAM_SYMBOL_WIDTH => AvalonStreamSymbolWidth,
       DEFAULT_DELAY => 1 ns,
       tpd_Clk_Valid => 1 ns,
       tpd_Clk_Data => 1 ns
@@ -104,10 +102,8 @@ begin
       TransRec => StreamTxRec
     );
 
-  AvalonSreamReceiver_1 : AvalonStreamReceiver
+  AvalonStreamReceiver_1 : AvalonStreamReceiver
     generic map(
-      AVALON_STREAM_DATA_WIDTH => AvalonStreamDataWidth,
-      AVALON_STREAM_SYMBOL_WIDTH => AvalonStreamSymbolWidth,
       DEFAULT_DELAY => 1 ns,
       tpd_Clk_Ready => 1 ns
     )

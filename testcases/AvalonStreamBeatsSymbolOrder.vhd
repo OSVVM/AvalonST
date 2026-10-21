@@ -1,5 +1,3 @@
-library osvvm_avalonst;
-context osvvm_avalonst.AvalonStreamContext;
 
 architecture BeatsSymbolOrder of TestCtrl is
   signal TestDone : integer_barrier := 1;
@@ -25,11 +23,10 @@ begin
     -- Wait for test to finish
     -- every process has to call its own TestDone, otherwise the watchdog will execute
     WaitForBarrier(TestDone, 1000 ns);
-    AlertIf(now >= 1000 ns, "Test finished due to timeout");
-    AlertIf(GetAffirmCount < 1, "Test is not Self-Checking");
 
-    EndOfTestReports;
-    std.env.finish;
+    -- handles TimeOut and no Self-Checking internally
+    EndOfTestReports(TimeOut => now >= 1000 ns);
+    std.env.stop;
   end process;
 
   ------------------------------------------------------------

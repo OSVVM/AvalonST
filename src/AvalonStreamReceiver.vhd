@@ -18,8 +18,6 @@ entity AvalonStreamReceiver is
     INIT_EMPTY                    : std_logic_vector := "";
     INIT_LAST                     : natural := 0;
     MODEL_ID_NAME                 : string := "";
-    AVALON_STREAM_DATA_WIDTH      : integer range 1 to 8192 := 32;
-    AVALON_STREAM_SYMBOL_WIDTH    : integer range 1 to AVALON_STREAM_DATA_WIDTH := 8;
     AVALON_STREAM_ERROR           : integer range 1 to 256 := 1;
     tperiod_Clk                   : time := 10 ns;
     DEFAULT_DELAY                 : time := 1 ns;
@@ -28,16 +26,19 @@ entity AvalonStreamReceiver is
   port (
     Clk            : in std_logic;
     Reset          : in std_logic;
-    -- DUT signals
+
+    -- Fundamental signals
+    Channel        : in std_logic_vector(7 downto 0) := (others => '0');
     Valid          : in std_logic := '0';
-    Data           : in std_logic_vector(AVALON_STREAM_DATA_WIDTH - 1 downto 0);
+    Data           : in std_logic_vector;
     Ready          : out std_logic;
 
+    -- Packet signals
     StartOfPacket  : in std_logic := '0';
     EndOfPacket    : in std_logic := '0';
-    Empty          : in std_logic_vector(integer(ceil(log2(real(AVALON_STREAM_DATA_WIDTH) / real(AVALON_STREAM_SYMBOL_WIDTH)))) - 1 downto 0);
-    Channel        : in std_logic_vector(7 downto 0) := (others => '0');
-    -- testbench record
+    Empty          : in std_logic_vector;
+
+    -- OSVVM Transaction record
     TransRec       : inout StreamRecType
   );
 
@@ -47,6 +48,11 @@ entity AvalonStreamReceiver is
                                           ifelse(MODEL_ID_NAME'length > 0, MODEL_ID_NAME,
                                           to_lower(PathTail(AvalonStreamReceiver'PATH_NAME)));
 
+  -- Derive constants from interface
+  constant AVALON_STREAM_DATA_WIDTH             : integer := Data'length ;
+  constant EMPTY_WIDTH                          : integer := Empty'length ;
+  constant AVALON_STREAM_SYMBOLS_PER_DATA_WORD  : integer := 2**EMPTY_WIDTH ;
+  constant AVALON_STREAM_SYMBOL_WIDTH           : integer := AVALON_STREAM_DATA_WIDTH / AVALON_STREAM_SYMBOLS_PER_DATA_WORD ;
 end entity AvalonStreamReceiver;
 
 architecture bhv of AvalonStreamReceiver is

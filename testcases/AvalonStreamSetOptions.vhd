@@ -28,11 +28,10 @@ begin
     ClearAlerts;
 
     WaitForBarrier(TestDone, 1000 ns);
-    AlertIf(now >= 1000 ns, "Test finished due to timeout");
-    AlertIf(GetAffirmCount < 1, "Test is not Self-Checking");
 
-    EndOfTestReports;
-    std.env.finish;
+    -- handles TimeOut and no Self-Checking internally
+    EndOfTestReports(TimeOut => now >= 1000 ns);
+    std.env.stop;
     wait;
   end process ControlProc;
   ------------------------------------------------------------

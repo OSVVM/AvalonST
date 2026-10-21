@@ -10,14 +10,13 @@ use osvvm.ScoreboardPkg_slv.all;
 
 library osvvm_avalonst;
 context osvvm_avalonst.AvalonStreamContext;
+
 entity AvalonStreamTransmitter is
   generic (
     INIT_CHANNEL                  : std_logic_vector := "";
     INIT_EMPTY                    : std_logic_vector := "";
 
     MODEL_ID_NAME                 : string := "";
-    AVALON_STREAM_DATA_WIDTH      : integer range 1 to 8192 := 32;
-    AVALON_STREAM_SYMBOL_WIDTH    : integer range 1 to AVALON_STREAM_DATA_WIDTH := 8;
     AVALON_STREAM_CHANNELS        : integer range 1 to 256 := 1;
     DEFAULT_DELAY                 : time := 1 ns;
     tpd_Clk_Data                  : time := DEFAULT_DELAY;
@@ -31,14 +30,17 @@ entity AvalonStreamTransmitter is
   port (
     Clk            : in std_logic;
     Reset          : in std_logic;
-    -- DUT signals
+
+    -- Fundamental signals
+    Channel        : out std_logic_vector(7 downto 0) := (others => '0');
     Valid          : out std_logic := '0';
-    Data           : out std_logic_vector(AVALON_STREAM_DATA_WIDTH - 1 downto 0);
+    Data           : out std_logic_vector ;
+    Ready          : in std_logic;
+
+    -- Packet signals
     StartOfPacket  : out std_logic := '0';
     EndOfPacket    : out std_logic := '0';
-    Empty          : out std_logic_vector(integer(ceil(log2(real(AVALON_STREAM_DATA_WIDTH) / real(AVALON_STREAM_SYMBOL_WIDTH)))) - 1 downto 0) := (others => '0');
-    Ready          : in std_logic;
-    Channel        : out std_logic_vector(7 downto 0) := (others => '0');
+    Empty          : out std_logic_vector;
 
     -- OSVVM Transaction record
     TransRec       : inout StreamRecType
@@ -49,20 +51,24 @@ entity AvalonStreamTransmitter is
                                           ifelse(MODEL_ID_NAME'length > 0, MODEL_ID_NAME,
                                           to_lower(PathTail(AvalonStreamTransmitter'PATH_NAME)));
 
-  alias PacketFifo : ScoreboardIdType is TransRec.BurstFifo;
+  -- Derive constants from interface
+  constant AVALON_STREAM_DATA_WIDTH             : integer := Data'length ;
+  constant EMPTY_WIDTH                          : integer := Empty'length ;
+  constant AVALON_STREAM_SYMBOLS_PER_DATA_WORD  : integer := 2**EMPTY_WIDTH ;
+  constant AVALON_STREAM_SYMBOL_WIDTH           : integer := AVALON_STREAM_DATA_WIDTH / AVALON_STREAM_SYMBOLS_PER_DATA_WORD ;
 end entity AvalonStreamTransmitter;
 
 architecture bhv of AvalonStreamTransmitter is
   signal ModelID, BusFailedID : AlertLogIDType;
   signal TransmitRequestCount, TransmitDoneCount : integer := 0;
   signal StartOfNewStream : integer := 1;
-  signal TransmitFifo : osvvm.ScoreboardPkg_slv.ScoreboardIDType;
+  signal TransmitFifo   : osvvm.ScoreboardPkg_slv.ScoreboardIDType;
   -- Verification Component Configuration
-  signal SymbolOrder : boolean := true; -- little endian is default
+  signal SymbolOrder    : boolean := true; -- little endian is default
   signal PacketTransfer : boolean := false;
-  signal BeatsPerCycle : integer := AVALON_STREAM_DATA_WIDTH / AVALON_STREAM_SYMBOL_WIDTH;
-  signal ParamChannel : std_logic_vector(Channel'range) := ifelse(INIT_CHANNEL'length > 0, INIT_CHANNEL, (Channel'range => '0'));
-  signal ParamEmpty : std_logic_vector(Empty'range) := ifelse(INIT_EMPTY'length > 0, INIT_EMPTY, (Empty'range => '0'));
+  signal BeatsPerCycle  : integer := AVALON_STREAM_DATA_WIDTH / AVALON_STREAM_SYMBOL_WIDTH;
+  signal ParamChannel   : std_logic_vector(Channel'range) := ifelse(INIT_CHANNEL'length > 0, INIT_CHANNEL, (Channel'range => '0'));
+  signal ParamEmpty     : std_logic_vector(Empty'range)   := ifelse(INIT_EMPTY'length > 0,   INIT_EMPTY,   (Empty'range   => '0'));
 
   constant DEFAULT_BURST_MODE : StreamFifoBurstModeType := STREAM_BURST_WORD_MODE;
   signal BurstFifoMode : StreamFifoBurstModeType := DEFAULT_BURST_MODE;
@@ -117,10 +123,6 @@ begin
           if IsBlocking(TransRec.Operation) then
             wait until TransmitRequestCount = TransmitDoneCount and StartOfNewStream = 1;
           end if;
-        when WAIT_FOR_TRANSACTION =>
-          if TransmitRequestCount /= TransmitDoneCount then
-            wait until TransmitRequestCount = TransmitDoneCount;
-          end if;
         when SEND_BURST =>
           Param := UpdateOptions(
                    Param => SafeResize(ModelID, TransRec.ParamToModel, TransRec.ParamToModel'length),
@@ -152,14 +154,6 @@ begin
           if IsBlocking(TransRec.Operation) then
             wait until TransmitRequestCount = TransmitDoneCount;
           end if;
-        when WAIT_FOR_CLOCK =>
-          WaitForClock(Clk, TransRec.IntToModel);
-
-        when GET_TRANSACTION_COUNT =>
-          TransRec.IntFromModel <= TransmitDoneCount;
-
-        when MULTIPLE_DRIVER_DETECT =>
-          Alert(ModelID, "Multiple Drivers on Transaction Record. Transaction # " & to_string(TransRec.Rdy), FAILURE);
 
         when SET_MODEL_OPTIONS =>
           case AvalonStreamOptionsType'val(TransRec.Options) is
@@ -186,6 +180,7 @@ begin
               Alert(ModelID, "SetOptions, Unimplemented Option: " & to_string(AvalonStreamOptionsType'val(TransRec.Options)), FAILURE);
           end case;
           wait for 0 ns;
+
         when GET_MODEL_OPTIONS =>
           case AvalonStreamOptionsType'val(TransRec.Options) is
             when PACKET_TRANSFER =>
@@ -195,6 +190,7 @@ begin
             when others =>
               Alert(ModelID, "GetOptions, Unimplemented Option: " & to_string(AvalonStreamOptionsType'val(TransRec.Options)), FAILURE);
           end case;
+
         when SET_BURST_MODE =>
           BurstFifoMode <= TransRec.IntToModel;
           BurstFifoByteMode <= (TransRec.IntToModel = STREAM_BURST_BYTE_MODE);
@@ -202,6 +198,19 @@ begin
           wait for 0 ns;
         when GET_BURST_MODE =>
           TransRec.IntFromModel <= BurstFifoMode;
+        when WAIT_FOR_TRANSACTION =>
+          if TransmitRequestCount /= TransmitDoneCount then
+            wait until TransmitRequestCount = TransmitDoneCount;
+          end if;
+        when WAIT_FOR_CLOCK =>
+          WaitForClock(Clk, TransRec.IntToModel);
+
+        when GET_TRANSACTION_COUNT =>
+          TransRec.IntFromModel <= TransmitDoneCount;
+
+        when MULTIPLE_DRIVER_DETECT =>
+          Alert(ModelID, "Multiple Drivers on Transaction Record. Transaction # " & to_string(TransRec.Rdy), FAILURE);
+
         when others =>
           Alert(ModelID, "Unimplemented Transaction: " & to_string(TransRec.Operation), FAILURE);
       end case;
@@ -212,12 +221,12 @@ begin
     variable vEmptyBeats : integer := 0;
   begin
     -- initialize outputs
-    Valid <= '0';
-    Data <= (Data'range => 'X');
-    StartOfPacket <= '0';
-    EndOfPacket <= '0';
+    Valid            <= '0';
+    Data             <= (Data'range => 'X');
+    StartOfPacket    <= '0';
+    EndOfPacket      <= '0';
     StartOfNewStream <= 1;
-    Empty <= (others => '0');
+    Empty            <= (Empty'range => '0');
     wait for 0 ns;
     wait for 0 ns;
 
@@ -263,7 +272,7 @@ begin
         end if;
         DoPrepareTransmitData(Data, Channel, Empty, TransmitFifo, vEmptyBeats, BurstFifoMode, BeatsPerCycle, SymbolOrder, AVALON_STREAM_DATA_WIDTH, AVALON_STREAM_SYMBOL_WIDTH);
 
-        DoAvalonStreamValidHandshake(Clk, Valid, Ready, tpd_Clk_Valid, BusFailedID);
+        DoAvalonStreamValidHandshake(Clk, Valid, Ready, tpd_Clk_Valid, ModelID) ; -- BusFailedID);  ID not constructed
         TransmitDoneCount <= TransmitDoneCount + 1;
         vEmptyBeats := 0;
         Log(ModelID,
